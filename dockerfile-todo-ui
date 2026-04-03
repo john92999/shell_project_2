@@ -8,16 +8,8 @@ RUN npm install --legacy-peer-deps --silent
 
 COPY . .
 
-# Inject skipLibCheck into both tsconfig files to fix antd@3.x + @types/react@17 conflict
-# antd 3.x bundles its own @types/react inside react-slick which clashes with project's @types/react
-RUN node -e "
-  const fs = require('fs');
-  ['tsconfig.json','tsconfig.prod.json'].forEach(f => {
-    const cfg = JSON.parse(fs.readFileSync(f));
-    cfg.compilerOptions.skipLibCheck = true;
-    fs.writeFileSync(f, JSON.stringify(cfg, null, 2));
-  });
-"
+# Fix antd@3.x + @types/react@17 conflict — must be a single line
+RUN node -e "const fs=require('fs');['tsconfig.json','tsconfig.prod.json'].forEach(f=>{const c=JSON.parse(fs.readFileSync(f));c.compilerOptions.skipLibCheck=true;fs.writeFileSync(f,JSON.stringify(c,null,2))})"
 
 RUN npm run build
 
