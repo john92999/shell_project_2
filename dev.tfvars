@@ -11,3 +11,13 @@ subnet_names = [
   "private-subnet",
   "database-subnet"
 ]
+
+sg_name = [ "bastion-sg", "app-sg" ]
+
+ami_id = "ami-00bb6a80f01f03502"
+
+instance_type = "t2.micro"
+
+key_name = "demoapp.pem"
+
+cluster_name  = "main-eks-cluster"
