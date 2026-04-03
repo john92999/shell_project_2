@@ -7,3 +7,8 @@ variable "subnet_name" {
   description = "The name tag for the subnet"
   type        = list(string)
 }
+
+variable "vpc_id" {
+  description = "The VPC ID to associate subnets with"
+  type        = string
+}
