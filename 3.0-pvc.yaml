@@ -1,9 +1,29 @@
+# PersistentVolume — manually provisions storage on the node's disk at /mnt/postgres-data
+# Required because bare kubeadm clusters have no default StorageClass for dynamic provisioning
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgres-pv
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: /mnt/postgres-data    # folder will be auto-created on the node
+  persistentVolumeReclaimPolicy: Retain
+
+---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: postgres-pvc
   namespace: todo-app
 spec:
+  storageClassName: manual      # must match the PV above
   accessModes:
     - ReadWriteOnce
   resources:
