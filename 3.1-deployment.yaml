@@ -23,24 +23,24 @@ spec:
           env:
             - name: POSTGRES_USER
               valueFrom:
-                secretkeyref:
+                secretKeyRef:
                   name: postgres-secret
                   key: POSTGRES_USER
             - name: POSTGRES_PASSWORD
               valueFrom:
-                secretkeyref:
+                secretKeyRef:
                   name: postgres-secret
                   key: POSTGRES_PASSWORD
             - name: POSTGRES_DB
               valueFrom:
-                secretkeyref:
+                secretKeyRef:
                   name: postgres-secret
                   key: POSTGRES_DB
           volumeMounts:
             - name: postgres-storage
               mountPath: /var/lib/postgresql/data
           readinessProbe:
-            exce:
+            exec:
               command:
                 - pg_isready
                 - -U
