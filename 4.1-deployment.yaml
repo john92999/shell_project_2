@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-api
+  namespace: todo-app
+  labels:
+    app: todo-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: todo-api
+  template:
+    metadata:
+      labels:
+        app: todo-api
+    spec:
+      # initContainer waits for postgres to be ready before starting todo-api
+      # Without this, todo-api crashes on startup if postgres isn't up yet
+      initContainers:
+        - name: wait-for-postgres
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for postgres-service:5432..."
+              until nc -z postgres-service 5432; do
+                echo "postgres not ready, retrying in 2s..."
+                sleep 2
+              done
+              echo "postgres is up!"
+
+      containers:
+        - name: todo-api
+          image: todo-api:1.0.0
+          imagePullPolicy: Never # image is built locally, do not pull from registry
+          ports:
+            - containerPort: 8080
+          # Non-sensitive config from ConfigMap
+          envFrom:
+            - configMapRef:
+                name: todo-api-config
+          # Sensitive DB credentials from Secret
+          env:
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_USER
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
+          # Readiness probe — K8s waits for Spring Boot to fully start
+          # before sending any traffic to this pod
+          readinessProbe:
+            httpGet:
+              path: /api/todos
+              port: 8080
+            initialDelaySeconds: 30 # Spring Boot needs ~20-30s to start
+            periodSeconds: 10
+            failureThreshold: 5
+          # Liveness probe — restarts pod if Spring Boot hangs
+          livenessProbe:
+            httpGet:
+              path: /api/todos
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            failureThreshold: 3
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"

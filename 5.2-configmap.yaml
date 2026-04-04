@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: todo-ui-nginx-config
+  namespace: todo-app
+data:
+  default.conf: |
+    server {
+        listen 80 default_server;
+
+        # Proxy all /api/* calls to todo-api-service inside the cluster
+        # The browser never sees this — it just calls /api/todos on the same host
+        # todo-api-service is a stable K8s DNS name, never changes with IP
+        location /api/ {
+            proxy_pass         http://todo-api-service:8080/api/;
+            proxy_http_version 1.1;
+            proxy_set_header   Host              $host;
+            proxy_set_header   X-Real-IP         $remote_addr;
+            proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+            proxy_set_header   X-Forwarded-Proto $scheme;
+            proxy_read_timeout 60s;
+        }
+
+        # Serve React app — all unknown routes fall back to index.html
+        # (React Router handles client-side routing)
+        location / {
+            root   /usr/share/nginx/html;
+            index  index.html index.htm;
+            try_files $uri $uri/ /index.html;
+        }
+
+        error_page 500 502 503 504 /50x.html;
+        location = /50x.html {
+            root /usr/share/nginx/html;
+        }
+    }

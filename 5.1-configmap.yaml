@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: todo-ui-env-config
+  namespace: todo-app
+data:
+  env-config.js: |
+    window._env_ = {
+      REACT_APP_BACKEND_SERVER_URL: "",
+    }

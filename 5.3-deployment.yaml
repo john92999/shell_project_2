@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-ui
+  namespace: todo-app
+  labels:
+    app: todo-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: todo-ui
+  template:
+    metadata:
+      labels:
+        app: todo-ui
+    spec:
+      containers:
+        - name: todo-ui
+          image: todo-ui:1.0.0
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            # Overwrite baked-in env-config.js with the one from ConfigMap 1
+            - name: env-config-volume
+              mountPath: /usr/share/nginx/html/env-config.js
+              subPath: env-config.js
+
+            # Overwrite baked-in nginx.conf with the one from ConfigMap 2
+            # This injects the /api/ proxy_pass without rebuilding the image
+            - name: nginx-config-volume
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: default.conf
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+
+      volumes:
+        - name: env-config-volume
+          configMap:
+            name: todo-ui-env-config
+
+        - name: nginx-config-volume
+          configMap:
+            name: todo-ui-nginx-config
